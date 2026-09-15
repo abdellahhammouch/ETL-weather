@@ -17,3 +17,5 @@ python Scripts/extract.py
 ```
 
 Les fichiers source sont enregistrés dans `bronze` et les traces d'exécution dans `logs`. Ces répertoires sont volontairement exclus du suivi Git.
+
+Les paramètres réseau peuvent être adaptés dans le script selon le contexte d'exécution.
