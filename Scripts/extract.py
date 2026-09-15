@@ -79,7 +79,6 @@ def extract_cities(run_ts: str) -> pd.DataFrame:
 
     if cities.empty:
         raise ValueError("Le fichier des villes est vide.")
-    cities = validate_cities(cities)
 
     logger.info(f"Nombre de villes récupérées : {len(cities)}")
     return cities
