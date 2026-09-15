@@ -53,6 +53,23 @@ def run_timestamp() -> str:
     return datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
 
 
+def validate_cities(cities: pd.DataFrame) -> pd.DataFrame:
+    """Valide et normalise les coordonnées fournies par la source des villes."""
+    required_columns = ("city", "lat", "lng")
+    missing_columns = [column for column in required_columns if column not in cities.columns]
+    if missing_columns:
+        raise ValueError(f"Colonnes attendues manquantes : {', '.join(missing_columns)}")
+
+    validated = cities.dropna(subset=required_columns).copy()
+    validated["lat"] = pd.to_numeric(validated["lat"], errors="coerce")
+    validated["lng"] = pd.to_numeric(validated["lng"], errors="coerce")
+    validated = validated.dropna(subset=("lat", "lng"))
+
+    if validated.empty:
+        raise ValueError("Aucune ville avec des coordonnées valides n'a été trouvée.")
+    return validated
+
+
 
 def extract_cities(run_ts: str) -> pd.DataFrame:
 
@@ -79,9 +96,7 @@ def extract_cities(run_ts: str) -> pd.DataFrame:
 
     if cities.empty:
         raise ValueError("Le fichier des villes est vide.")
-    for col in ("city", "lat", "lng"):
-        if col not in cities.columns:
-            raise ValueError(f"Colonne attendue manquante dans le CSV des villes : {col}")
+    cities = validate_cities(cities)
 
     logger.info(f"Nombre de villes récupérées : {len(cities)}")
     return cities
