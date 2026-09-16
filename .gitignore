@@ -1,6 +1,8 @@
 # Données produites par les exécutions locales
 bronze/
 logs/
+silver/
+gold/
 
 # Environnements et cache Python
 .venv/
