@@ -29,11 +29,12 @@ DAILY_VARIABLES = [
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 BRONZE_DIR = PROJECT_ROOT / "bronze"
-BRONZE_CITIES_DIR = BRONZE_DIR / "Villes"
-BRONZE_WEATHER_DIR = BRONZE_DIR / "Meteo"
+BRONZE_CITIES_DIR = BRONZE_DIR / "villes"
+BRONZE_WEATHER_DIR = BRONZE_DIR / "meteo"   
 LOGS_DIR = PROJECT_ROOT / "logs"
+FAILURES_DIR = PROJECT_ROOT / "Echec" / "Extract"
 
-for d in (BRONZE_CITIES_DIR, BRONZE_WEATHER_DIR, LOGS_DIR):
+for d in (BRONZE_CITIES_DIR, BRONZE_WEATHER_DIR, LOGS_DIR, FAILURES_DIR):
     d.mkdir(parents=True, exist_ok=True)
 
 
@@ -167,7 +168,7 @@ def extract_weather(cities: pd.DataFrame, run_ts: str) -> list:
     logger.info(f"Météo sauvegardée en Bronze : {raw_path}")
 
     if failed_cities:
-        failures_path = LOGS_DIR / f"echecs_meteo_{run_ts}.json"
+        failures_path = FAILURES_DIR / f"echecs_meteo_{run_ts}.json"
         failures_path.write_text(json.dumps(failed_cities, ensure_ascii=False, indent=2), encoding="utf-8")
         logger.warning(f"{len(failed_cities)} ville(s) en échec, voir {failures_path}")
 
