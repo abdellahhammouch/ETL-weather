@@ -95,13 +95,49 @@ def flatten_weather(weather_records, run_ts):
 
 
 
+def merge_with_cities(df, cities_df):
+    """Jointure entre les prévisions météo et le référentiel des villes.
+
+    Le nom de ville présent dans le Bronze météo permet déjà de relier
+    chaque prévision à ses coordonnées, mais le référentiel SimpleMaps
+    contient des informations supplémentaires (région, population) qui ne
+    sont récupérées nulle part ailleurs dans le pipeline. On les rapatrie
+    ici, comme demandé par le cahier des charges (jointure villes x météo).
+    """
+
+    colonnes_villes = cities_df[["city", "admin_name", "population"]].rename(
+        columns={"admin_name": "region"}
+    )
+
+    doublons_villes = colonnes_villes["city"].duplicated().sum()
+    if doublons_villes > 0:
+        print(
+            f"Attention : {doublons_villes} ville(s) en double dans le référentiel "
+            "SimpleMaps, on garde la première occurrence pour la jointure."
+        )
+        colonnes_villes = colonnes_villes.drop_duplicates(subset=["city"], keep="first")
+
+    df = df.merge(colonnes_villes, on="city", how="left")
+
+    villes_sans_correspondance = df.loc[df["region"].isna(), "city"].unique()
+    if len(villes_sans_correspondance) > 0:
+        print(
+            f"Attention : {len(villes_sans_correspondance)} ville(s) sans région "
+            f"après la jointure : {list(villes_sans_correspondance)}"
+        )
+
+    print("Jointure villes x météo effectuée (région, population).")
+    return df
+
+
+
 def standardize_types(df):
     df["date_prevision"] = pd.to_datetime(df["date_prevision"], errors="coerce")
 
     colonnes_numeriques = [
         "latitude", "longitude", "temperature_max", "temperature_min",
         "precipitation_sum", "precipitation_probability_max",
-        "wind_speed_max", "wind_gusts_max", "weather_code",
+        "wind_speed_max", "wind_gusts_max", "weather_code", "population",
     ]
     for colonne in colonnes_numeriques:
         df[colonne] = pd.to_numeric(df[colonne], errors="coerce")
@@ -188,7 +224,7 @@ def quality_checks(df, nombre_villes_bronze):
     if nombre_villes_silver < nombre_villes_bronze:
         print(f"Attention : seulement {nombre_villes_silver}/{nombre_villes_bronze} villes sont présentes en Silver.")
 
-    for colonne in ["city", "date_prevision", "latitude", "longitude"]:
+    for colonne in ["city", "date_prevision", "latitude", "longitude", "region"]:
         nombre_manquant = df[colonne].isna().sum()
         if nombre_manquant > 0:
             print(f"Attention : {nombre_manquant} valeur(s) manquante(s) dans la colonne '{colonne}'.")
@@ -213,6 +249,7 @@ def main():
     cities_df, weather_records = load_bronze(run_ts)
 
     df = flatten_weather(weather_records, run_ts)
+    df = merge_with_cities(df, cities_df)
     df = standardize_types(df)
     df = remove_duplicates(df)
     df = detect_inconsistencies(df)
@@ -225,3 +262,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+    
