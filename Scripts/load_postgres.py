@@ -5,7 +5,9 @@ import pandas as pd
 from sqlalchemy import text
 
 from common.db import get_engine
+from common.logging_utils import get_logger
 
+logger = get_logger("load_postgres")
 
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
@@ -24,7 +26,7 @@ def find_latest_run_ts():
     run_ts_list.sort()
     dernier_run = run_ts_list[-1]
 
-    print(f"Run Gold le plus récent trouvé : {dernier_run}")
+    logger.info(f"Run Gold le plus récent trouvé : {dernier_run}")
     return dernier_run
 
 
@@ -33,7 +35,7 @@ def find_latest_run_ts():
 def load_gold(run_ts):
     chemin_gold = GOLD_DIR / f"risques_meteo_{run_ts}.csv"
     df = pd.read_csv(chemin_gold, parse_dates=["date_prevision"])
-    print(f"Prévisions Gold chargées : {len(df)}")
+    logger.info(f"Prévisions Gold chargées : {len(df)}")
     return df
 
 
@@ -73,7 +75,7 @@ def upsert_villes(df, engine):
             ville_id = resultat.scalar()
             ville_id_par_nom[ligne["city"]] = ville_id
 
-    print(f"Villes insérées/mises à jour : {len(ville_id_par_nom)}")
+    logger.info(f"Villes insérées/mises à jour : {len(ville_id_par_nom)}")
     return ville_id_par_nom
 
 
@@ -130,7 +132,7 @@ def insert_previsions(df, engine, ville_id_par_nom, run_ts):
             )
             nombre_inserees += resultat.rowcount
 
-    print(f"Lignes de prévisions réellement insérées : {nombre_inserees} / {len(df)}")
+    logger.info(f"Lignes de prévisions réellement insérées : {nombre_inserees} / {len(df)}")
 
 
 
@@ -138,7 +140,7 @@ def insert_previsions(df, engine, ville_id_par_nom, run_ts):
 
 def main():
     run_ts = find_latest_run_ts()
-    print(f"\n=== Démarrage du chargement PostgreSQL pour le run {run_ts} ===\n")
+    logger.info(f"=== Démarrage du chargement PostgreSQL pour le run {run_ts} ===")
 
     df = load_gold(run_ts)
 
@@ -146,8 +148,9 @@ def main():
     ville_id_par_nom = upsert_villes(df, engine)
     insert_previsions(df, engine, ville_id_par_nom, run_ts)
 
-    print(f"\n=== Chargement PostgreSQL terminé pour le run {run_ts} ===")
+    logger.info(f"=== Chargement PostgreSQL terminé pour le run {run_ts} ===")
 
 
 if __name__ == "__main__":
     main()
+    
