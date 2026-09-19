@@ -60,12 +60,16 @@ Le résultat est enregistré dans `silver/previsions_<horodatage>.csv`.
 `Scripts/transform_gold.py` ajoute des catégories `faible`, `moyen` et `élevé` pour la température, les précipitations et les rafales, puis calcule un `risk_score` entre zéro et cent ainsi qu'un `risk_level`.
 
 ```text
-risk_score = risque_température × 30 %
-           + risque-précipitations × 40 %
-           + risque-rafales × 30 %
+score_pondéré = risque_température × 30 %
+              + risque-précipitations × 40 %
+              + risque-rafales × 30 %
+
+risk_score = score_pondéré × 70 % + max(risque_température, risque_précipitations, risque_rafales) × 30 %
 ```
 
-Les sous-scores sont calculés par règle de trois et bornés entre zéro et cent. La température utilise le risque le plus élevé entre chaleur et froid. Le résultat est enregistré dans `gold/risques_meteo_<horodatage>.csv`.
+Les sous-scores sont calculés par règle de trois et bornés entre zéro et cent. La température utilise le risque le plus élevé entre chaleur et froid.
+
+La moyenne pondérée (30/40/30, les précipitations pesant le plus lourd car c'est le facteur le plus directement bloquant pour une livraison) reflète l'équilibre global des conditions du jour. Elle est ensuite combinée à 70/30 avec le plus élevé des trois sous-scores : ainsi, un facteur isolé mais extrême (canicule, tempête...) fait remonter le score final même si les deux autres conditions sont calmes, sans dépendre d'un seuil brutal qui créerait une discontinuité (deux prévisions très proches en valeur mais de part et d'autre d'un seuil recevraient sinon des scores très différents). Le résultat est enregistré dans `gold/risques_meteo_<horodatage>.csv`.
 
 ## Entrepôt de données PostgreSQL
 
