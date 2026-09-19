@@ -21,7 +21,6 @@ CREATE TABLE IF NOT EXISTS previsions (
     wind_speed_max                  NUMERIC(6, 2),
     wind_gusts_max                  NUMERIC(6, 2),
     weather_code                    INTEGER,
-    weather_description             VARCHAR(100),
 
     temperature_category            VARCHAR(20),
     precipitation_category          VARCHAR(20),
