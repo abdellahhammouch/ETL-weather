@@ -4,7 +4,9 @@ from datetime import datetime
 
 import pandas as pd
 
+from common.logging_utils import get_logger
 
+logger = get_logger("transform_silver")
 
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
@@ -38,7 +40,7 @@ def find_latest_run_ts():
     run_ts_list.sort()
     dernier_run = run_ts_list[-1]
 
-    print(f"Run Bronze le plus récent trouvé : {dernier_run}")
+    logger.info(f"Run Bronze le plus récent trouvé : {dernier_run}")
     return dernier_run
 
 
@@ -52,8 +54,8 @@ def load_bronze(run_ts):
     with open(chemin_meteo, "r", encoding="utf-8") as f:
         weather_records = json.load(f)
 
-    print(f"Villes chargées : {len(cities_df)}")
-    print(f"Enregistrements météo chargés : {len(weather_records)}")
+    logger.info(f"Villes chargées : {len(cities_df)}")
+    logger.info(f"Enregistrements météo chargés : {len(weather_records)}")
 
     return cities_df, weather_records
 
@@ -90,7 +92,7 @@ def flatten_weather(weather_records, run_ts):
             lignes.append(ligne)
 
     df = pd.DataFrame(lignes)
-    print(f"Nombre de lignes après transformation (ville x jour) : {len(df)}")
+    logger.info(f"Nombre de lignes après transformation (ville x jour) : {len(df)}")
     return df
 
 
@@ -111,7 +113,7 @@ def merge_with_cities(df, cities_df):
 
     doublons_villes = colonnes_villes["city"].duplicated().sum()
     if doublons_villes > 0:
-        print(
+        logger.warning(
             f"Attention : {doublons_villes} ville(s) en double dans le référentiel "
             "SimpleMaps, on garde la première occurrence pour la jointure."
         )
@@ -121,12 +123,12 @@ def merge_with_cities(df, cities_df):
 
     villes_sans_correspondance = df.loc[df["region"].isna(), "city"].unique()
     if len(villes_sans_correspondance) > 0:
-        print(
+        logger.warning(
             f"Attention : {len(villes_sans_correspondance)} ville(s) sans région "
             f"après la jointure : {list(villes_sans_correspondance)}"
         )
 
-    print("Jointure villes x météo effectuée (région, population).")
+    logger.info("Jointure villes x météo effectuée (région, population).")
     return df
 
 
@@ -142,7 +144,7 @@ def standardize_types(df):
     for colonne in colonnes_numeriques:
         df[colonne] = pd.to_numeric(df[colonne], errors="coerce")
 
-    print("Types de données standardisés.")
+    logger.info("Types de données standardisés.")
     return df
 
 
@@ -156,9 +158,9 @@ def remove_duplicates(df):
     nombre_supprimes = nombre_avant - nombre_apres
 
     if nombre_supprimes > 0:
-        print(f"{nombre_supprimes} doublon(s) supprimé(s).")
+        logger.warning(f"{nombre_supprimes} doublon(s) supprimé(s).")
     else:
-        print("Aucun doublon trouvé.")
+        logger.info("Aucun doublon trouvé.")
 
     return df
 
@@ -211,7 +213,7 @@ def detect_inconsistencies(df):
             lignes_incoherentes.append(index)
 
     df = df.drop(index=lignes_incoherentes).copy()
-    print(f"Nombre de lignes incohérentes supprimées : {len(lignes_incoherentes)}")
+    logger.warning(f"Nombre de lignes incohérentes supprimées : {len(lignes_incoherentes)}") if lignes_incoherentes else logger.info("Aucune ligne incohérente détectée.")
     return df
 
 
@@ -222,21 +224,21 @@ def quality_checks(df, nombre_villes_bronze):
 
     nombre_villes_silver = df["city"].nunique()
     if nombre_villes_silver < nombre_villes_bronze:
-        print(f"Attention : seulement {nombre_villes_silver}/{nombre_villes_bronze} villes sont présentes en Silver.")
+        logger.warning(f"Attention : seulement {nombre_villes_silver}/{nombre_villes_bronze} villes sont présentes en Silver.")
 
     for colonne in ["city", "date_prevision", "latitude", "longitude", "region"]:
         nombre_manquant = df[colonne].isna().sum()
         if nombre_manquant > 0:
-            print(f"Attention : {nombre_manquant} valeur(s) manquante(s) dans la colonne '{colonne}'.")
+            logger.warning(f"Attention : {nombre_manquant} valeur(s) manquante(s) dans la colonne '{colonne}'.")
 
-    print("Contrôles qualité terminés.")
+    logger.info("Contrôles qualité terminés.")
 
 
 
 def save_silver(df, run_ts):
     chemin_sortie = SILVER_DIR / f"previsions_{run_ts}.csv"
     df.to_csv(chemin_sortie, index=False)
-    print(f"Fichier Silver sauvegardé : {chemin_sortie}")
+    logger.info(f"Fichier Silver sauvegardé : {chemin_sortie}")
     return chemin_sortie
 
 
@@ -244,7 +246,7 @@ def save_silver(df, run_ts):
 def main():
     run_ts = find_latest_run_ts()
 
-    print(f"\n=== Démarrage du traitement Silver pour le run {run_ts} ===\n")
+    logger.info(f"=== Démarrage du traitement Silver pour le run {run_ts} ===")
 
     cities_df, weather_records = load_bronze(run_ts)
 
@@ -257,7 +259,8 @@ def main():
 
     save_silver(df, run_ts)
 
-    print(f"\n=== Traitement Silver terminé pour le run {run_ts} ===")
+
+    logger.info(f"=== Traitement Silver terminé pour le run {run_ts} ===")
 
 
 if __name__ == "__main__":
