@@ -1,13 +1,11 @@
-# Données produites par les exécutions locales
 bronze/
 logs/
 silver/
 gold/
+Echec/
 
-# Environnements et cache Python
 .venv/
 __pycache__/
 *.py[cod]
 
-# Fichiers d'environnement locaux
 .env
