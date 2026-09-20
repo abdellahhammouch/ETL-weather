@@ -253,3 +253,9 @@ Ajoutez les captures réelles après le premier chargement de données dans `doc
 ├── requirements.txt               # Dépendances Python
 └── env.example                    # Modèle de variables d'environnement
 ```
+
+
+
+## Voici le lien de la planification sur JIRA
+
+https://hammouchabdellah4529.atlassian.net/jira/software/projects/SCRUM/boards/1?filter=&groupBy=none&atlOrigin=eyJpIjoiZWJmODcxNTA5YTIzNGFmNGJjYjc5YzNlMTUxZGIyZDQiLCJwIjoiaiJ9
